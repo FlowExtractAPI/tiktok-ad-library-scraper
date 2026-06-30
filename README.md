@@ -1,8 +1,8 @@
-# 🔍 TikTok Ad Library Scraper  Export TikTok ads by keyword, advertiser, or URL
+# 🔍 TikTok Ad Library Scraper  Export unlimited TikTok ads by keyword, advertiser, or URL
 
 > **Formula:** `Scrapes TikTok ads` + `from the TikTok Ad Library (library.tiktok.com)` + `as clean, structured JSON`
 
-**[TikTok Ad Library Scraper](https://apify.com/dz_omar/tiktok-ad-library-scraper?fpr=smcx63)** extracts ads from the official TikTok Ad Library  search by keyword, by advertiser name, or paste a library URL directly, and get back advertiser, creative type, shown dates, estimated audience, video and image creatives, and (optionally) full targeting data. No login, no cookies, no browser automation.
+**[TikTok Ad Library Scraper](https://apify.com/dz_omar/tiktok-ad-library-scraper?fpr=smcx63)** extracts ads from the official TikTok Ad Library  search by keyword, by advertiser name, or paste a library URL directly, and get back advertiser, creative type, shown dates, estimated audience, video and image creatives, and (optionally) full targeting data. No login, no cookies, no browser automation. **Collect unlimited results** — set Maximum Results to `0` and pull every ad a search returns, with no 1,000-ad cap.
 
 Perfect for **competitive ad researchers**, **performance marketers**, and **agencies** who need TikTok ad creative and targeting intelligence without manually clicking through the Ad Library.
 
@@ -25,6 +25,16 @@ Here are some of the most common use cases:
 
 ---
 
+## Can I scrape more than 1,000 TikTok ads? (Unlimited results)
+
+**Yes — there is no 1,000-ad cap.** Set **Maximum Results** to `0` and the scraper paginates until the TikTok Ad Library has no more ads to return, collecting **every ad in your search**. Need tens of thousands? Each URL and each keyword runs as its own independent search, so you scale results by adding more keywords, more regions, or splitting a broad query into narrower date ranges.
+
+- ♾️ **`maxResults: 0` → unlimited** ads per search — no artificial limit.
+- 🌍 **Stack searches** — combine regions, advertisers, and date windows in a single run to pull far beyond 1,000 ads.
+- ⚡ **Real-time output** — each ad is written to your dataset the moment it is scraped, so even a long unlimited run is never lost if it is aborted.
+
+---
+
 ## What data can the TikTok Ad Library Scraper extract?
 
 ### 🏷️ Ad Identity
@@ -43,6 +53,7 @@ Here are some of the most common use cases:
 ### 🎬 Creatives
 - `videos`  Playable signed video URL + cover image
 - `image_urls`  Image creative URLs
+- `video_download_url` / `cover_download_url` / `image_download_urls`  permanent re-hosted links, present only when **Download Media** is enabled (originals are always kept alongside)
 
 ### 🎯 Full Targeting *(only when Fetch Ad Detail is enabled)*
 - Creative title & advertising objective
@@ -103,11 +114,19 @@ Build searches manually. Each entry runs independently with its own region, date
 
 #### `maxResults` (Integer)
 - **Default**: `10`
-- Maximum ads collected **per URL and per keyword**. Set to `0` to collect everything the API returns. Start with `10` to test.
+- Maximum ads collected **per URL and per keyword**. Set to `0` for **unlimited** — collect every ad a search returns, with **no 1,000-result cap**. Start with `10` to test, then switch to `0` for a full pull.
 
 #### `fetchAdDetail` (Boolean)
 - **Default**: `false`
-- When on, the scraper makes one extra request per ad to collect full advertiser, creative, and targeting detail. Slower and billed at the higher rate.
+- When on, the scraper makes one extra request per ad to collect full advertiser, creative, and targeting detail. **This is slower**  one additional request per ad.
+
+#### `downloadMedia` (Boolean)
+- **Default**: `false`
+- When on, each ad's video and images are downloaded to permanent storage and the links are added to the output (`video_download_url`, `cover_download_url`, `image_download_urls`). TikTok's own media links are signed and expire after a few hours; this re-hosts them so they stay accessible.
+- Media is downloaded by the **[Universal Downloader](https://apify.com/dz_omar/universal-downloader?fpr=smcx63)** actor and saved to **your** account's storage (free accounts: files expire in ~7 days; paid accounts: retained).
+
+> ⏱️ **Performance note  both options add time.**
+> `fetchAdDetail` adds one request per ad. `downloadMedia` adds a separate download per ad (a few seconds each). Each one alone makes a run noticeably slower; **enabling both together compounds the cost**  for large result counts (e.g. 1,000 ads) expect a substantially longer run. If you only need metadata, leave both off. Turn them on when you specifically need the full detail and/or permanent media files.
 
 ### 📆 The date window (important)
 
@@ -205,12 +224,39 @@ Because pricing is per result, cost is simply **results × per-result price**. C
 }
 ```
 
+**With `downloadMedia` (permanent links added alongside originals):**
+
+```json
+{
+    "id": "1866996966152193",
+    "name": "nikesk87",
+    "type": "video",
+    "videos": [
+        {
+            "video_url": "https://library.tiktok.com/api/v1/cdn/.../video.mp4?...",
+            "cover_img": "https://p16-common-sign.tiktokcdn.com/.../cover.image?...",
+            "video_download_url": "https://api.apify.com/v2/key-value-stores/<store>/records/video-...mp4?signature=...",
+            "cover_download_url": "https://api.apify.com/v2/key-value-stores/<store>/records/image-...image?signature=..."
+        }
+    ],
+    "image_urls": [],
+    "image_download_urls": [],
+    "region": "DE",
+    "_source": "tiktok_ad_library_scraper"
+}
+```
+
+The originals (`video_url`, `cover_img`, `image_urls`) are always kept; the `*_download_url` fields are added only when Download Media is on.
+
 ---
 
 ## ❓ Frequently Asked Questions
 
 **Do I need a TikTok account to use this Actor?**
 No. The TikTok Ad Library is a public transparency portal. This scraper requires no login, cookies, or credentials.
+
+**Is there a limit on how many ads I can scrape? Can I get more than 1,000 results?**
+No fixed limit. Set **Maximum Results** to `0` for unlimited — the scraper keeps paginating until the TikTok Ad Library returns no more ads for your search, with no 1,000-result cap. For very large pulls, split a broad search into multiple keywords, regions, or date ranges; each runs independently and streams to your dataset in real time.
 
 **How far back can I search?**
 About one year. The TikTok Ad Library retains roughly 365 days of "last shown date" history, and the window slides forward daily. Dates older than that are automatically clamped or skipped with a clear message.
@@ -220,6 +266,12 @@ Yes. Provide any mix of URLs and keyword filters  they are processed in the same
 
 **What's the difference between keyword search and advertiser search?**
 A keyword search matches your text against ad content. Turning on `searchAsAdvertiser` treats your text as an advertiser name and returns that advertiser's ads  the same split TikTok shows as "Search this exact phrase" vs "Advertiser name."
+
+**Why is the run slow when I enable Download Media or Fetch Ad Detail?**
+Both add per-ad work. `fetchAdDetail` makes one extra request per ad; `downloadMedia` downloads each ad's video and images (a few seconds per ad) via the [Universal Downloader](https://apify.com/dz_omar/universal-downloader?fpr=smcx63). Enabling both together compounds the time, so a large run (e.g. 1,000 ads) can take substantially longer. Leave them off if you only need metadata and the original (short-lived) media URLs.
+
+**Where are downloaded media files stored, and do they expire?**
+They're saved to your own Apify account's key-value store by the Universal Downloader. On free accounts, unnamed storage expires in about 7 days; on paid accounts it's retained. The original TikTok URLs expire after a few hours regardless  that's why Download Media exists.
 
 **What happens if the run is aborted or hits a block mid-way?**
 Results are written in real time, one ad at a time, as they are scraped. Anything already collected is saved. A failing source is skipped and the next one continues  one bad input never loses the whole run.
@@ -251,7 +303,34 @@ Results stream into your dataset **in real time**  each ad is pushed the moment 
 | Each ad scraped | Pushed to the dataset immediately |
 | Source fails or is blocked | That source is skipped; already-pushed ads are retained |
 | Budget/charge limit reached | Run stops cleanly; everything collected so far is kept |
-| Run aborted | Already-pushed ads remain in the dataset |
+| Run aborted or migrated | Already-pushed ads remain; the run resumes from its checkpoint when restarted (see below) |
+
+---
+
+## 🔄 Does the scraper resume if it crashes? (Resume & crash recovery)
+
+**Yes — it picks up where it left off.** The Actor checkpoints its progress to the run's storage, so if it is **migrated** to another server, **aborted**, hits its **timeout**, or runs **out of memory**, the next start continues instead of re-scraping from zero. Finished sources are skipped and ads already saved are de-duplicated, so you never get duplicate rows or pay twice for the same ad.
+
+| Trigger | What happens |
+|---|---|
+| Server migration | Progress is saved instantly and the Actor reboots onto the new server, then resumes |
+| Periodic save | A checkpoint is written about every 60 seconds and every few ads |
+| Abort / timeout | The checkpoint is kept; re-running the **same input** resumes from there |
+| Clean completion | The checkpoint is cleared, so a fresh run of the same input starts from scratch |
+
+The checkpoint is **encrypted at rest** (AES-256-GCM) on production runs, so nothing operational is exposed in the Storage tab. Resume is automatic — there is nothing to enable.
+
+---
+
+## 🌐 Proxy Support
+
+| User tier | Proxy used |
+|---|---|
+| 💎 Paying | Premium dedicated residential proxies — with automatic **one-way fallback to Apify Proxy** if a provider fails, so a proxy outage never sinks the run |
+| 🆓 Free | Apify Proxy (RESIDENTIAL) — built in, automatic |
+| ⚠️ None available | Direct connection |
+
+Proxy selection is automatic and tier-aware. A blocked IP is rotated to a fresh one mid-run, and the proxy is never logged or written to the dataset.
 
 ---
 
