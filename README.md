@@ -68,7 +68,7 @@ Here are some of the most common use cases:
 
 ## ⚙️ How to use the TikTok Ad Library Scraper
 
-You provide **URLs**, **keyword filters**, or both. Each URL and each keyword counts as one input item.
+You provide **URLs**, **keyword filters**, or both — **at least one is required**. Each URL and each keyword counts as one input item. (If you run with nothing filled in, the Actor finishes successfully and writes a single dataset item explaining what to add — it does not error out.)
 
 > **Total results = (number of URLs + number of keywords) × Maximum Results.**
 > Example: 5 URLs + 6 keywords = 11 inputs. At 16 Maximum Results → 11 × 16 = **176 ads** maximum.
@@ -326,7 +326,7 @@ The checkpoint is **encrypted at rest** (AES-256-GCM) on production runs, so not
 
 | User tier | Proxy used |
 |---|---|
-| 💎 Paying | Premium dedicated residential proxies — with automatic **one-way fallback to Apify Proxy** if a provider fails, so a proxy outage never sinks the run |
+| 💎 Paying (dedicated proxy configured) | Your dedicated proxy — with automatic **one-way fallback to Apify Proxy** if it fails, so a proxy outage never sinks the run |
 | 🆓 Free | Apify Proxy (RESIDENTIAL) — built in, automatic |
 | ⚠️ None available | Direct connection |
 
@@ -342,7 +342,8 @@ Proxy selection is automatic and tier-aware. A blocked IP is rotated to a fresh 
 | Range too old | `range … is entirely older than TikTok's ~1-year retention` | Choose dates within the last year |
 | Date out of range at runtime | `TikTok rejected the date range as out of its ~1-year retention window` | Narrow the range to the last year |
 | Initial block | `TikTok blocked the initial request` | Try again later, or enable a proxy |
-| No valid input | `No scrapeable sources` | Check your URLs, keywords, and dates |
+| No input at all | Run **succeeds** with a `no_input` guidance item in the dataset | Add at least one Start URL or Keyword Filter |
+| No valid input | Run **succeeds** with a `no_valid_sources` guidance item explaining why | Fix reversed/too-old dates or invalid URLs/keywords |
 
 ---
 
